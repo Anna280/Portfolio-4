@@ -1,0 +1,1266 @@
+---
+title: "Analysis_sockult"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+library(tidyverse)
+```
+
+#-----DATA CLEANING------
+
+#Importing dataframe and extracting all participants who finished as well as offer and response columns
+```{r warning=FALSE, include=FALSE}
+
+wide<-read.csv("data/all_apps_wide_2021-05-10.csv") #loading the wide dataframe with all data from oTree
+
+df_wide<-filter(wide, wide$participant._current_page_name == "ThankYou")#filtering all participants who did not finish the experiment away. The last page in the experiment is called "ThankYou".
+wide$participant.code<-as.factor(wide$participant.code)
+df_wide<-df_wide[-c(1), ] 
+
+Columns_offers<-grep(pattern="\\.Offer$", #Filtering the df_wide dataframe for all columns where participants give offers
+    x=colnames(df_wide))
+
+Columns_responds<-grep(pattern="\\.bot_side$", #Filtering the df_wide dataframe for all columns where bot responds
+    x=colnames(df_wide))
+
+Columns_description<-grep(pattern="\\.about_you$", #Filtering the df_wide dataframe for all columns where bot responds
+    x=colnames(df_wide))
+
+Persona_player<-grep(pattern="\\.P$", #Filtering the df_wide dataframe for all columns where bot responds
+    x=colnames(df_wide))
+
+OfferDf<- df_wide[, colnames(df_wide)[Columns_offers]] #A df with data from offers
+
+ResponseDf<-df_wide[, colnames(df_wide)[Columns_responds]]  #A df with bot response
+
+about_youDf<-df_wide[, colnames(df_wide)[Columns_description]]  #A df with the participants descriptions
+
+```
+
+
+-
+#offer df
+```{r include=FALSE}
+#Extracting participant code, age and gender and adding them to the OfferDf
+OfferDf["ParticipantCode"] <- df_wide$participant.code 
+OfferDf["Age"] <- df_wide$Consentform.1.player.Age
+OfferDf["Gender"] <- df_wide$Consentform.1.player.Gender
+
+#relocating to the beginning of the dataframe
+OfferDf <- OfferDf %>% 
+  relocate(ParticipantCode, Age, Gender, .before =ultimatumn_anonym.1.player.Offer)
+
+#renaming columns 
+colnames(OfferDf) <- sub(".player.Offer", "", colnames(OfferDf))
+colnames(OfferDf) <- sub("Persona", "P", colnames(OfferDf))
+colnames(OfferDf) <- sub("ultimatumn_anonym", "An", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.1", "An1", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.2", "An1.2", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.3", "An1.3", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.4", "An1.4", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.5", "An1.5", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.6", "An1.6", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.7", "An1.7", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.8", "An1.8", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.9", "An1.9", colnames(OfferDf))
+colnames(OfferDf) <- sub("An.10", "An10", colnames(OfferDf))
+```
+
+
+-
+#response df
+```{r include=FALSE}
+#Doing the same
+ResponseDf["ParticipantCode"] <- df_wide$participant.code 
+ResponseDf["Age"] <- df_wide$Consentform.1.player.Age
+ResponseDf["Gender"] <- df_wide$Consentform.1.player.Gender
+
+colnames(ResponseDf) <- sub("ultimatumn_anonym", "An", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("player.bot_side", "Response", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("ultimatumn_anonym", "An", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.1", "An1", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.2", "An1.2", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.3", "An1.3", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.4", "An1.4", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.5", "An1.5", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.6", "An1.6", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.7", "An1.7", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.8", "An1.8", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.9", "An1.9", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("An.10", "An10", colnames(ResponseDf))
+colnames(ResponseDf) <- sub("Persona", "P", colnames(ResponseDf))
+
+ResponseDf <- ResponseDf %>% 
+  relocate(ParticipantCode, Age, Gender, .before =An1.Response)
+```
+
+-
+#Creating dataframe with responses and offers 
+```{r include = FALSE}
+#Combining responsedf and offerdf
+Combined<-cbind(ResponseDf, OfferDf)
+
+#including participants
+
+Combined["ParticipantCode"] <- df_wide$participant.code 
+Combined["Age"] <- df_wide$Consentform.1.player.Age
+Combined["Gender"] <- df_wide$Consentform.1.player.Gende
+
+#removing 
+colnames(Combined ) <- sub(".player.Offer", "", colnames(Combined ))
+colnames(Combined ) <- sub("Persona", "P", colnames(Combined ))
+colnames(Combined) <- sub("player.bot_side", "Response", colnames(Combined))
+colnames(Combined ) <- sub("ultimatumn_anonym", "An", colnames(Combined ))
+colnames(Combined ) <- sub("An.1", "An1", colnames(Combined ))
+colnames(Combined ) <- sub("An.2", "An1.2", colnames(Combined ))
+colnames(Combined ) <- sub("An.3", "An1.3", colnames(Combined ))
+colnames(Combined ) <- sub("An.4", "An1.4", colnames(Combined ))
+colnames(Combined ) <- sub("An.5", "An1.5", colnames(Combined ))
+colnames(Combined ) <- sub("An.6", "An1.6", colnames(Combined ))
+colnames(Combined ) <- sub("An.7", "An1.7", colnames(Combined ))
+colnames(Combined ) <- sub("An.8", "An1.8", colnames(Combined ))
+colnames(Combined ) <- sub("An.9", "An1.9", colnames(Combined ))
+colnames(Combined ) <- sub("An.10", "An10", colnames(Combined ))
+
+Combined <- Combined %>% 
+  relocate(Gender, .before =An1.Response)
+
+```
+
+
+-
+#From wide to long format
+```{r warning=FALSE, include=FALSE}
+#from wide to long format for the Offer only df
+df_long<-reshape(OfferDf, 
+        direction = "long",
+        varying = list(names(OfferDf)[4:83]),
+        v.names = "Offer",
+        idvar = c("ParticipantCode", "Age", "Gender"),
+        timevar = "Round",
+        times = c(names(OfferDf)[4:83]))
+
+#Using a combined dataframe to convert response to long format
+df_respons_long<-reshape(Combined, 
+        direction = "long",
+        varying = list(names(Combined)[4:83]),
+        v.names = "Response",
+        idvar =  "ParticipantCode",
+        timevar = "Round",
+        times = c(names(Combined)[4:83]))
+```
+
+
+-
+#Creating Is_anonymous, OtherPlayer, PrevOffer, PrevResonse, centered_PrevOffer
+```{r warning=FALSE}
+
+df_long["Response"]<- df_respons_long$Response
+df_long["Is_anonymous"] <- ifelse(grepl("An",df_long$Round),'1','0')
+
+x<-rep(c(1,2,3,4,5,6,7,8),each=10) #addinf the "other" column for each person participants play against
+
+#Creating the column "other"
+df_long <- df_long %>% 
+  group_by(ParticipantCode) %>% 
+  mutate(Other = x)
+
+pacman::p_load(tidyverse, ggpubr, groupdata2, lme4, lmerTest)
+
+df_long["Response"]<- df_respons_long$Response #lagging response and offer
+df_long <- df_long %>% 
+  group_by(ParticipantCode, Other) %>% 
+  mutate(PrevOffer = lag(Offer),
+         PrevResponse =lag(Response))
+
+#adding centered previous offer
+df_long <- df_long %>% 
+  group_by(ParticipantCode, Other) %>% 
+  mutate(centered_PrevOffer = ( PrevOffer - 50))
+
+#setting variables as factors
+df_long$Gender<-as.factor(df_long$Gender)
+df_long$ParticipantCode<-as.factor(df_long$ParticipantCode)
+```
+
+
+
+#--------ANALYSIS-------
+
+-
+-
+#plots before analysis
+```{r}
+library()
+#checking data, effect for gender and is anonymous
+ggplot(df_long, aes(Offer, color = Gender)) + 
+  geom_density() + 
+  facet_wrap(~Other) + 
+  theme_minimal()
+
+#log transforming offer to check if it gets better, it does not
+
+df_long["log_offer"]<-log(df_long$Offer)
+
+non_log<-ggplot(df_long, aes(Offer)) + 
+  geom_density() + 
+  scale_color_colorblind()+
+  theme_minimal()
+
+log<-ggplot(df_long, aes(log_offer)) + 
+  geom_density() + 
+  scale_color_colorblind()+
+  theme_minimal()
+
+log+non_log #comparing plots
+
+#checking for ratio between accept or decline between personas
+ggplot(df_long, aes(Response)) + 
+  stat_count()+
+  facet_wrap(~Other) + 
+  theme_minimal()
+
+```
+
+
+
+
+
+-
+
+#stats on mean age and gender
+```{r}
+#Age:
+mean(df_long$Age) #26.57
+sd(df_long$Age) #10.29
+
+#Gender:
+sum(df_wide$Consentform.1.player.Gender == 1)
+#men: 26-11 = 15
+
+box<-boxplot(df_long$Offer,
+  ylab = "Offer"
+)
+
+#Creating botxplot to check outliers
+plot1<-ggplot(df_long,aes(Offer, color="dose"))+
+geom_boxplot(outlier.colour="black", outlier.shape=16, outlier.size=2, notch=FALSE)+theme(panel.background = element_blank())
+
+plot1
+
+```
+
+-
+#Percent of decline
+```{r}
+Percent_decline<-sum(df_long$Response == "Decline")/(sum(df_long$Response == "Accept")+sum(df_long$Response == "Decline"))*100
+#calculating the decline percent across all participants and rounds
+Percent_decline
+```
+
+Gender prior information from: https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1465-7295.2001.tb00060.x?casa_token=C1nTDoIOaz0AAAAA:TZGS37O8UK8c1PgbNEeVOIcRPL55kz0H_N1nuEwNiFlgWVMelV3S-_IWEIXKeaRNthK7Kz9g6fXf_A  
+
+Models I have made for hyp 1:
+bf(Offer ~ 1 + Is_anonymous + Gender + (1 |ParticipantCode)) 
+
+bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + (1 |ParticipantCode))
+
+bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + PrevResponse:centered_PrevOffer + (1 | ParticipantCode))
+
+For Hyp 2:
+
+Offer_semantic<- bf(Offer ~ 1 + Semantic_distance + Gender + PrevResponse + (1 |ParticipantCode)) 
+
+
+-
+#1. Predicting Offer based on anonymous condition, gender with random intercept of ParticipantCode (students t and gaussian)
+
+bf(Offer ~ 1 + Is_anonymous + Gender + (1 |ParticipantCode))
+
+#model1
+```{r}
+
+pacman::p_load("readr", "rethinking", "brms", "tidyverse", "patchwork", "metafor", ggthemes)
+
+m1_OfferFormula<- bf(Offer ~ 1 + Is_anonymous + Gender + (1 |ParticipantCode)) #defining first formula, by nesting #Is_anonymous with participants I allow the same participant to start "new" with the conditions
+
+get_prior(m1_OfferFormula, data = df_long, family = gaussian) 
+
+mean(df_long$Offer) #checking the mean of offers and the sd
+sd(df_long$Offer)
+
+
+data_prior_m1_OfferFormula <- c(
+  prior(normal(45,4), class = Intercept), #from the mean of all offers which is 40. I set 10 as sd so it can vary between 20 and 70
+  prior(normal(-2,1), class = b, coef = Gender2), #Assume Gender2 (male) offer a mean of 5 in difference with sd of 2.5 (can go from 0 to 10)
+  prior(normal(0,2), class = b, coef = Is_anonymous1), #Assume no difference... let the data "convince" while allowing the effect to go to 4
+  prior(normal(4,2), class = sd, group = ParticipantCode),
+  prior(normal(12,2), class = sigma))
+
+#Make first model with gaussian
+
+M1_gaussian<-brm(
+  m1_OfferFormula,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_m1_OfferFormula,
+  sample_prior="only",
+  chains = 2,
+  cores = 2,
+)
+
+pp_m1_gaussian<-pp_check(M1_gaussian, nsamples = 100) #doing ppcheck
+pp_m1_gaussian
+
+#Make first model with students t:
+#m1_student<-brm(
+#  m1_OfferFormula,
+#  data=df_long,
+#  family= student(),
+#  prior=data_prior_m1_OfferFormula,
+#  sample_prior="only",
+#  chains = 2,
+#  cores = 2
+#)
+
+#choosing to go with gaussian distribution
+#pp_m1_student<-pp_check(m1_student, nsamples = 100)
+#pp_m1_student
+
+
+#Training the model on data
+#Model with sampling from data
+
+M1_gaussian_post<-brm(
+  m1_OfferFormula,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_m1_OfferFormula ,
+  sample_prior=T,
+  chains = 2,
+  cores = 2,
+)
+
+summary(M1_gaussian_post) #getting summary output
+posterior_M1_Gaussian <-  posterior_samples(M1_gaussian_post) #sampling from the posterior
+```
+
+-
+-
+#Plots
+```{r}
+## anonymous
+m1_anonymous<- ggplot(posterior_M1_Gaussian) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+
+
+m1_ParticipantCode<- ggplot(posterior_M1_Gaussian) +
+  theme_classic() +
+  geom_density(aes(prior_sd_ParticipantCode), fill="red", alpha=0.3) +
+  geom_density(aes(sd_ParticipantCode__Intercept), fill="blue", alpha=0.5)
+
+
+m1_sigma<- ggplot(posterior_M1_Gaussian) +
+  theme_classic() +
+  geom_density(aes(prior_sigma), fill="red", alpha=0.3) +
+  geom_density(aes(sigma), fill="blue", alpha=0.5)
+
+m1_Intercept<- ggplot(posterior_M1_Gaussian) +
+  theme_classic() +
+  geom_density(aes(prior_Intercept), fill="red", alpha=0.3) +
+  geom_density(aes(b_Intercept), fill="blue", alpha=0.5)
+
+m1_ParticipantCode+m1_sigma+m1_Intercept
+
+library("patchwork")
+
+## gender
+m1_Gender2<- ggplot(posterior_M1_Gaussian) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+m1_anonymous+m1_Gender2
+
+```
+
+-
+#redoing model 1
+```{r}
+
+#new priors:
+data_prior2_m1_OfferFormula <- c(
+  prior(normal(45,4), class = Intercept), #from the mean of all offers which is 40. I set 10 as sd so it can vary between 20 and 70
+  prior(normal(-2,4), class = b, coef = Gender2), #Assume Gender2 (male) offer a mean of 5 in difference with sd of 2.5 (can go from 0 to 10)
+  prior(normal(0,6), class = b, coef = Is_anonymous1), #Assume no difference... let the data "convince" while allowing the effect to go to 4
+  prior(normal(8,3), class = sd, group = ParticipantCode),
+  prior(normal(12,2), class = sigma))
+
+
+#run model again:
+M1_gaussian2<-brm(
+  m1_OfferFormula,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior2_m1_OfferFormula,
+  sample_prior="only",
+  chains = 2,
+  cores = 2,
+)
+pp_m1_gaussian2<-pp_check(M1_gaussian2, nsamples = 100)
+pp_m1_gaussian2
+
+#Make model when sampling from data with 4 chains
+
+M1_gaussian2_post<-brm(
+  m1_OfferFormula,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior2_m1_OfferFormula,
+  sample_prior=T,
+  chains = 4,
+  cores = 2,
+)
+
+
+posterior_M1_Gaussian2 <-  posterior_samples(M1_gaussian2_post) #sampling from the posterior
+summary(M1_gaussian2_post) #getting summary output
+
+```
+
+-
+#checking chains
+```{r}
+pacman::p_load(bayesplot,viridis,mice)
+
+color_scheme_set("viridis")
+mcmc_rank_overlay(M1_gaussian2_post, pars = "b_Intercept", "b_Gender2") + theme_classic()
+
+mcmc_rank_overlay(M1_gaussian2_post, pars = "b_Intercept", "b_Is_anonymous1") + theme_classic()
+```
+
+-
+#plots2
+```{r}
+m1.2_Is_anonymous1<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+
+
+## gender
+m1.2_Gender2<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+
+
+m1.2_Gender2+m1.2_Is_anonymous1
+
+## anonymous
+m1.2_Is_anonymous1<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+
+
+m1.2_ParticipantCode<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_sd_ParticipantCode), fill="red", alpha=0.3) +
+  geom_density(aes(sd_ParticipantCode__Intercept), fill="blue", alpha=0.5)
+
+m1.2_sigma<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_sigma), fill="red", alpha=0.3) +
+  geom_density(aes(sigma), fill="blue", alpha=0.5)
+
+m1.2_Intercept<- ggplot(posterior_M1_Gaussian2) +
+  theme_classic() +
+  geom_density(aes(prior_Intercept), fill="red", alpha=0.3) +
+  geom_density(aes(b_Intercept), fill="blue", alpha=0.5)
+
+
+m1.2_ParticipantCode+m1.2_sigma+m1.2_Intercept
+```
+
+
+-
+#conditional effects plot for M1_gaussian
+```{r}
+
+plot(conditional_effects(M1_gaussian2_post, spaghetti=T, nsamples=100, method = "fitted"), points=T)
+
+plot(conditional_effects(M1_gaussian2_post, spaghetti=T, nsamples=100, method = "predict"), points=T)
+
+```
+
+
+
+
+--
+
+#2. Predicting Offer based on anoynomus condition, gender, PrevResponse + random intercept for participantCode
+
+ bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + (1 |ParticipantCode))
+ 
+#Mdodel2
+```{r}
+m1_PrevResponse<- bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + (1 |ParticipantCode))
+
+get_prior(m1_PrevResponse, data = df_long, family = gaussian) 
+
+#setting priors
+data_prior_m1_PrevResponse <- c(
+  prior(normal(45,4), class = Intercept), 
+  prior(normal(-2,4), class = b, coef = Gender2),
+  prior(normal(0,6), class = b, coef = Is_anonymous1),
+  prior(normal(0,4), class = b, coef = PrevResponseDecline),
+  prior(normal(8,3), class = sd),
+  prior(normal(12,2), class = sigma))
+
+
+
+#Make first model
+
+M2_PrevResponse<-brm(
+  m1_PrevResponse,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_m1_PrevResponse,
+  sample_prior="only",
+  chains = 2,
+  cores = 2,
+)
+
+pp_m2_PrevResponse<-pp_check(M2_PrevResponse, nsamples = 100)
+pp_m2_PrevResponse
+
+#Make first model, train on data with 4 chains
+M2_PrevResponse_post<-brm(
+  m1_PrevResponse,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_m1_PrevResponse,
+  sample_prior=T,
+  chains = 4,
+  cores = 2,
+)
+
+
+posterior_M2_PrevResponse <-  posterior_samples(M2_PrevResponse_post) #sampling from posterior
+warnings() #checking warnings
+
+summary(M2_PrevResponse_post)
+
+
+
+```
+
+
+-
+#Chains trace check
+```{r}
+mcmc_rank_overlay(M2_PrevResponse_post, pars = "b_Intercept", "b_rPevResponseDecline") + theme_classic()
+
+mcmc_rank_overlay(M2_PrevResponse_post, pars = "b_Intercept", "b_Is_anonymous1") + theme_classic()
+```
+
+
+-
+#plots m2
+```{r}
+##prevresponseDecline
+m2_PrevResponseDecline<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_b_PrevResponseDecline), fill="red", alpha=0.3) +
+  geom_density(aes(b_PrevResponseDecline), fill="blue", alpha=0.5)
+
+
+## anonymous
+m2_Is_anonymous1<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+
+
+## gender
+m2_Gender2<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+
+
+m2_PrevResponseDecline+m2_Is_anonymous1+m2_Gender2
+
+#Participantcode
+m2_ParticipantCode<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_sd_ParticipantCode), fill="red", alpha=0.3) +
+  geom_density(aes(sd_ParticipantCode__Intercept), fill="blue", alpha=0.5)
+
+#sigma
+m2_sigma<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_sigma), fill="red", alpha=0.3) +
+  geom_density(aes(sigma), fill="blue", alpha=0.5)
+p3
+
+#intercept
+m2_Intercept<- ggplot(posterior_M2_PrevResponse) +
+  theme_classic() +
+  geom_density(aes(prior_Intercept), fill="red", alpha=0.3) +
+  geom_density(aes(b_Intercept), fill="blue", alpha=0.5)
+
+
+m2_Intercept+m2_sigma+m2_ParticipantCode
+
+```
+
+
+
+-
+#conditional effects
+```{r}
+plot(conditional_effects(M2_PrevResponse_post, spaghetti=T, nsamples=100, method = "fitted"), points=T)
+
+plot(conditional_effects(M2_PrevResponse_post, spaghetti=T, nsamples=100, method = "predict"), points=T)
+
+```
+
+
+
+
+
+
+#3. Predicting Offer based on anoynomus condition, gender, PrevResponse + prevResponse:PrevOffer
+
+bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + PrevResponse:centered_PrevOffer + (1 | ParticipantCode))
+
+#Model
+```{r}
+
+M3_interaction<- bf(Offer ~ 1 + Is_anonymous + Gender + PrevResponse + PrevResponse:centered_PrevOffer + (1 | ParticipantCode))
+
+get_prior(M3_interaction, data = df_long, family = gaussian) 
+
+
+#setting priors
+data_prior_M3_interaction <- c(
+  prior(normal(45,4), class = Intercept), 
+  prior(normal(-2,8), class = b, coef = Gender2),
+  prior(normal(0,6), class = b, coef = Is_anonymous1),
+  prior(normal(0,4), class = b, coef = PrevResponseDecline),
+  prior(normal(0,0.5), class = b, coef = PrevResponseAccept:centered_PrevOffer),#setting sceptical prior
+  prior(normal(0,0.5), class = b, coef = PrevResponseDecline:centered_PrevOffer), #setting sceptical prior
+  prior(normal(8,3), class = sd),
+  prior(normal(8,2), class = sigma))
+
+#Make first model
+M3_interaction<-brm(
+  M3_interaction,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_M3_interaction,
+  sample_prior="only",
+  chains = 4,
+  cores = 2,
+)
+
+
+pp_M3_interaction<-pp_check(M3_interaction, nsamples = 100)
+pp_M3_interaction
+
+df_long$PrevResponse<-as.factor(df_long$PrevResponse)
+
+#train model on data
+M3_interaction_post<-brm(
+  M3_interaction,
+  data=df_long,
+  family= gaussian(),
+  prior=data_prior_M3_interaction,
+  sample_prior=T,
+  chains = 4,
+  cores = 2,
+)
+posterior_M1_interaction <-  posterior_samples(M3_interaction_post)
+
+
+summary(M3_interaction_post)
+
+```
+
+-
+#checking chain trace 
+```{r}
+mcmc_rank_overlay(M3_interaction_post, pars = "b_Intercept", "b_Is_anonymous1") + theme_classic()
+
+mcmc_rank_overlay(M3_interaction_post, pars = "b_Intercept","b_Gender2") + theme_classic()
+
+mcmc_rank_overlay(M3_interaction_post, pars = "b_PrevResponseDecline", "PrevResponseDecline:centered_PrevOffer") + theme_classic()
+
+mcmc_rank_overlay(M3_interaction_post, pars = "b_PrevResponseDecline", "PrevResponseAccept:centered_PrevOffer") + theme_classic()
+```
+
+
+-
+#Plots model 3
+```{r}
+
+colnames(posterior_M1_interaction) <- sub(":", "", colnames(posterior_M1_interaction))
+
+p3.M1_Interaction<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_b_PrevResponseDeclinecentered_PrevOffer), fill="red", alpha=0.3) +
+  geom_density(aes(b_PrevResponseDeclinecentered_PrevOffer), fill="blue", alpha=0.5)
+
+p3.M1_Interaction
+
+p1.2_prev_other6 <- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_b_PrevResponseAcceptcentered_PrevOffer), fill="red", alpha=0.3) +
+  geom_density(aes(b_PrevResponseAcceptcentered_PrevOffer), fill="blue", alpha=0.5)
+
+p1.2_prev_other6 + p3.M1_Interaction
+
+p1.2<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+p1.2
+
+library("patchwork")
+
+## gender
+p3.2<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+
+p3.2
+
+p1.2+p3.2
+
+## anonymous
+p1<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+p1
+
+
+p2<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_sd_ParticipantCode), fill="red", alpha=0.3) +
+  geom_density(aes(sd_ParticipantCode__Intercept), fill="blue", alpha=0.5)
+p2
+
+p3<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_sigma), fill="red", alpha=0.3) +
+  geom_density(aes(sigma), fill="blue", alpha=0.5)
+p3
+
+p4<- ggplot(posterior_M1_interaction) +
+  theme_classic() +
+  geom_density(aes(prior_Intercept), fill="red", alpha=0.3) +
+  geom_density(aes(b_Intercept), fill="blue", alpha=0.5)
+p4
+
+p3+p4+p2
+
+
+
+```
+
+
+
+---(not use below)----
+
+-
+#Conditional effects plots
+```{r}
+
+plot(conditional_effects(M3_interaction_post, spaghetti=T,nsamples=100, method ="predict"), points=T)
+plot(conditional_effects(M3_interaction_post, spaghetti=T,nsamples=100, method ="fitted"), points=T)
+```
+
+
+
+-
+#loo compare
+```{r}
+
+loo_m2 <- add_criterion(M2_PrevResponse_post, criterion = "loo")
+
+loo_m3 <- add_criterion(M3_interaction_post, criterion = "loo")
+
+loo_model_weights(loo_m2, loo_m3)
+
+loo_compare(loo_m2, loo_m3)
+
+```
+
+
+
+#2.2 Cosine similarity
+
+
+#model 1
+Offer_BigModel<- bf(Offer ~ 1 + Scaled_sem + Gender + PrevResponse + Other + (1 |ParticipantCode)) 
+```{r}
+
+new_dataset["Scaled_sem"]<-scale(new_dataset$Semantic_distance)
+
+new_dataset$Gender<-as.factor(new_dataset$Gender)
+Offer_BigModel<- bf(Offer ~ 1 + Scaled_sem + Gender + PrevResponse + (1 |ParticipantCode)) 
+
+get_prior(Offer_BigModel, data = 
+new_dataset, family = gaussian) 
+
+mean(new_dataset$Offer)
+sd(new_dataset$Offer)
+#setting priors
+
+Offer_BigModel_prior <- c(
+  prior(normal(45,4), class = Intercept), 
+  prior(normal(-2,8), class = b, coef = Gender2), 
+  prior(normal(0,4), class = b, coef = PrevResponseDecline), 
+  prior(normal(3,2), class = b, coef = Scaled_sem),
+  prior(normal(12,3), class = sd),
+  prior(normal(12,2), class = sigma))
+
+#running model with prior 
+Prior_Offer_BigModel<-brm(
+  Offer_BigModel,
+  data=new_dataset,
+  family= gaussian(),
+  prior=Offer_BigModel_prior,
+  sample_prior="only",
+  chains = 2,
+  cores = 2,
+)
+
+
+pp_Offer_BigModel<-pp_check(Prior_Offer_BigModel, nsamples = 100)
+
+pp_Offer_BigModel
+
+#Training the model on data with 4 chains
+Post_Offer_BigModel<-brm(
+  Offer_BigModel,
+  data=new_dataset,
+  family= gaussian(),
+  prior=Offer_BigModel_prior,
+  sample_prior=T,
+  chains = 4,
+  cores = 2,
+)
+
+summary(Post_Offer_BigModel)
+Post_Offer_BigModel_posterior<-  posterior_samples(Post_Offer_BigModel)
+```
+-
+-
+#checking chains
+```{r}
+mcmc_rank_overlay(Post_Offer_BigModel, pars = "b_Intercept", "b_Scaled_sem") + theme_classic()
+
+mcmc_rank_overlay(Post_Offer_BigModel, pars = "b_Intercept","b_Gender2") + theme_classic()
+
+mcmc_rank_overlay(Post_Offer_BigModel, pars = "b_Intercept","b_PrevResponseDecline") + theme_classic()
+
+```
+
+-
+#plots
+```{r}
+p1_prevResponse<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_b_PrevResponseDecline), fill="red", alpha=0.3) +
+  geom_density(aes(b_PrevResponseDecline), fill="blue", alpha=0.5)
+p1_prevResponse
+
+library("patchwork")
+
+## gender
+p2_prevResponse<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+
+p2_prevResponse
+
+
+p1_prevResponse+p2_prevResponse+p1.2
+
+p1.2<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_b_Scaled_sem), fill="red", alpha=0.3) +
+  geom_density(aes(b_Scaled_sem), fill="blue", alpha=0.5)
+p1.2
+
+library("patchwork")
+
+## gender
+p3.2<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_b_Gender2), fill="red", alpha=0.3) +
+  geom_density(aes(b_Gender2), fill="blue", alpha=0.5)
+
+p3.2
+
+p1.2+p3.2+p1_prevResponse
+
+## anonymous
+p1<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_b_Is_anonymous1), fill="red", alpha=0.3) +
+  geom_density(aes(b_Is_anonymous1), fill="blue", alpha=0.5)
+p1
+
+
+p2<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_sd_ParticipantCode), fill="red", alpha=0.3) +
+  geom_density(aes(sd_ParticipantCode__Intercept), fill="blue", alpha=0.5)
+p2
+
+p3<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_sigma), fill="red", alpha=0.3) +
+  geom_density(aes(sigma), fill="blue", alpha=0.5)
+p3
+
+p4<- ggplot(Post_Offer_BigModel_posterior) +
+  theme_classic() +
+  geom_density(aes(prior_Intercept), fill="red", alpha=0.3) +
+  geom_density(aes(b_Intercept), fill="blue", alpha=0.5)
+p4
+
+p3+p4+p2
+```
+
+
+
+#checking conditional effects
+```{r}
+plot(conditional_effects(Post_Offer_BigModel, spaghetti=T,nsamples=100, method ="predict"), points=T)
+plot(conditional_effects(Post_Offer_BigModel, spaghetti=T,nsamples=100, method ="fitted"), points=T)
+```
+
+
+
+
+#---Persona Semantic Preprocessing-----
+
+#Making Persona dataframes with one word in each row
+```{r include=FALSE}
+library(dplyr)
+library(tidytext)
+
+
+library(data.table)
+#load("EN_100k_lsa.rda")
+EN100k<-as.data.frame(EN_100k_lsa)
+
+setDT(EN100k, keep.rownames = TRUE)[]
+
+Persona_df <- data.frame (Descriptions = c('I am a 24 year old woman and I study international business communication in Spanish on 5th semester at bachelor’s level. In my spare time I’m active in a political youth party and I like going on long walks with my friends from my studies and the party. During corona I have been baking sourdough bread and started going for walks.','Work as a personal consultant in Danske bank guiding clients with investments. When I’m off work, I am together with my fiancé and kids. I golf and ride mountain bike with my coworkers in the weekends/off-work days','My name is Camilla and I’m 19 years old. Im in 3.G in Gymnasium and become a student in June. After the summer i want to study a bachelor in law at Aalborg university and move there with my two friends from my gymnasium. In my spare time i read a lot and watch some Netflix shows.','I am 23 years old and work part time in Bilka in the garden department. I like taking rides on my motorcycle. I enjoy gardening, cooking and spending time with my friends and play with my cat. I am trying to get a job as an environmental technologist. I am not doing much during these times, looking forward to an open world again so I can travel.','I’m 21 years old and a student.I study datascience and I have a student-job at a printer firm. In my free time I 
+play piano, paint and read books. I also enjoy watching YouTube and I spend way too much time on Twitter'),
+Persona=c("Persona_1","Persona_2","Persona_3","Persona_4","Persona_5"))
+
+#running the first participant through the sentiment analysis in order to rowbind the following participants to the dataframe
+text<-c(Persona_df$Descriptions[1]) 
+persona_about_you_word<-data.frame(text) %>% unnest_tokens(word, text)
+
+sentiment_persona<-filter(EN100k, rn %in% persona_about_you_word$word) %>% 
+  mutate(Persona = Persona_df$Persona[1]) %>% 
+  relocate(Persona, .before = rn)  %>% 
+  rename(word = rn)
+
+#loop through each participant and adding their sentiment scores
+for (row_nr in 2:nrow(Persona_df)){
+  
+  text<-c(Persona_df$Descriptions[row_nr])
+  
+  about_you_word<-data.frame(text) %>% unnest_tokens(word, text)
+  
+  temporary_sentiment<-filter(EN100k, rn %in% about_you_word$word) %>% 
+    
+  mutate(Persona = Persona_df$Persona[row_nr]) %>% 
+  relocate(Persona, .before = rn)  %>% 
+  rename(word = rn)
+  
+  sentiment_persona<-rbind(sentiment_persona, temporary_sentiment)
+}
+
+sentiment_persona<-as.data.frame(sentiment_persona)  #setting it as dataframe
+mean <- aggregate(sentiment_persona[,3:302], list(sentiment_persona$Persona), FUN = mean) #taking average of each semantic dimension across words for each participant
+
+mean_persona<-mean %>% rename(Persona =Group.1)
+
+```
+
+-
+#merging EN_100K with about you for participants
+```{r}
+
+
+class(df_wide$participant.code)
+
+df_wide$participant.code<-as.factor(df_wide$participant.code)
+about_youDf<-data.frame(about_youDf)
+
+about_youDf["ParticipantCode"]<- df_wide$participant.code #adding participant code
+View(about_youDf)
+
+#running the first participant through the sentiment analysis in order to rowbind the following participants to the dataframe
+text_participants<-c(about_youDf$about_youDf[1]) 
+about_you_word<-data.frame(text) %>% unnest_tokens(word, text)
+
+sentiment<-filter(EN100k, rn %in% about_you_word$word) %>% 
+  mutate(PartcipantCode = about_youDf$ParticipantCode[1]) %>% 
+  relocate(PartcipantCode, .before = rn)  %>% 
+  rename(word = rn)
+
+#loop through each participant and adding their sentiment scores
+for (row_nr in 2:nrow(about_youDf)){
+  
+  text<-c(about_youDf$about_youDf[row_nr])
+  
+  about_you_word<-data.frame(text) %>% unnest_tokens(word, text)
+  
+  temporary_sentiment<-filter(EN100k, rn %in% about_you_word$word) %>% 
+    
+  mutate(PartcipantCode = about_youDf$ParticipantCode[row_nr]) %>% 
+  relocate(PartcipantCode, .before = rn)  %>% 
+  rename(word = rn)
+  
+  sentiment<-rbind(sentiment, temporary_sentiment)
+}
+
+sentiment<-as.data.frame(sentiment)  #setting it as dataframe
+mean <- aggregate(sentiment[,3:302], list(sentiment$PartcipantCode), FUN = mean) #taking average of each semantic dimension across words for each participant
+
+mean<-mean %>% rename(ParticipantCode =Group.1)
+
+new_dataset<-read_csv("Cosine-similaritydf.csv")
+
+
+```
+
+
+```{r}
+library(pacman)
+#install.packages("SnowballC")
+#install.packages("lsa")
+library(lsa)
+
+```
+-
+#persona1
+
+```{r}
+#Trying to calculate 1 semantic distance:
+
+mean_persona_V<-mean_persona[,2:301]
+
+mean_participant_V<-mean[,2:301]
+
+vec1<-c(as.vector(mean_participant_V[1,1:300]))
+vec1<- as.numeric(unlist(vec1))
+
+vec2<-c(as.vector(mean_persona_V[1,1:300]))
+vec2<- as.numeric(unlist(vec2))
+
+cos_similarity<-cosine(vec1,vec2)
+cos_similarity
+cos_similarity<-as.data.frame(cos_similarity)
+
+#for persona 1:
+for (row_nr in 2:nrow(mean_participant_V)){
+  
+  vec1<-c(as.vector(mean_participant_V[row_nr,1:300]))
+  vec1<- as.numeric(unlist(vec1))
+  
+  vec2<-c(as.vector(mean_persona_V[1,1:300]))
+  vec2<- as.numeric(unlist(vec2))
+
+  cos_sim<-cosine(vec1,vec2)
+  
+  cos_similarity<-rbind(cos_similarity, cos_sim)
+}
+
+cos_similarity["ParticipantCode"]<- df_wide$participant.code #binding participant to the df
+```
+
+-
+#Persona2
+```{r}
+#Trying to calculate 1 semantic distance:
+
+vec2<-c(as.vector(mean_participant_V[1,1:300]))
+vec2<- as.numeric(unlist(vec2))
+
+vec3<-c(as.vector(mean_persona_V[2,1:300]))
+vec3<- as.numeric(unlist(vec3))
+
+cos_similarity_Persona2<-cosine(vec2,vec3)
+
+cos_similarity_Persona2<-as.data.frame(cos_similarity_Persona2)
+
+#for persona 2:
+for (row_nr in 2:nrow(mean_participant_V)){
+  
+  vec1<-c(as.vector(mean_participant_V[row_nr,1:300]))
+  vec1<- as.numeric(unlist(vec1))
+  
+  vec2<-c(as.vector(mean_persona_V[2,1:300]))
+  vec2<- as.numeric(unlist(vec2))
+
+  cos_sim<-cosine(vec1,vec2)
+  
+  cos_similarity_Persona2<-rbind(cos_similarity_Persona2, cos_sim)
+}
+
+cos_similarity_Persona2["ParticipantCode"]<- df_wide$participant.code #binding participant to the df
+```
+
+
+
+-
+#Persona3
+```{r}
+#Trying to calculate 1 semantic distance:
+
+vec3<-c(as.vector(mean_participant_V[1,1:300]))
+vec3<- as.numeric(unlist(vec3))
+
+vec4<-c(as.vector(mean_persona_V[3,1:300]))
+vec4<- as.numeric(unlist(vec4))
+
+cos_similarity_Persona3<-cosine(vec3,vec4)
+
+cos_similarity_Persona3<-as.data.frame(cos_similarity_Persona3)
+
+#for persona 3:
+for (row_nr in 2:nrow(mean_participant_V)){
+  
+  vec1<-c(as.vector(mean_participant_V[row_nr,1:300]))
+  vec1<- as.numeric(unlist(vec1))
+  
+  vec2<-c(as.vector(mean_persona_V[3,1:300]))
+  vec2<- as.numeric(unlist(vec2))
+
+  cos_sim<-cosine(vec1,vec2)
+  
+  cos_similarity_Persona3<-rbind(cos_similarity_Persona3, cos_sim)
+}
+
+cos_similarity_Persona3["ParticipantCode"]<- df_wide$participant.code #binding participant to the df
+```
+
+
+-
+#Persona4
+```{r}
+#Trying to calculate 1 semantic distance:
+
+vec4<-c(as.vector(mean_participant_V[1,1:300]))
+vec4<- as.numeric(unlist(vec4))
+
+vec5<-c(as.vector(mean_persona_V[4,1:300]))
+vec5<- as.numeric(unlist(vec5))
+
+cos_similarity_Persona4<-cosine(vec4,vec5)
+
+cos_similarity_Persona4<-as.data.frame(cos_similarity_Persona4)
+
+#for persona 4:
+for (row_nr in 2:nrow(mean_participant_V)){
+  
+  vec1<-c(as.vector(mean_participant_V[row_nr,1:300]))
+  vec1<- as.numeric(unlist(vec1))
+  
+  vec2<-c(as.vector(mean_persona_V[4,1:300]))
+  vec2<- as.numeric(unlist(vec2))
+
+  cos_sim<-cosine(vec1,vec2)
+  
+  cos_similarity_Persona4<-rbind(cos_similarity_Persona4, cos_sim)
+}
+
+cos_similarity_Persona4["ParticipantCode"]<- df_wide$participant.code #binding participant to the df
+```
+
+-
+#Persona5
+```{r}
+#Trying to calculate 1 semantic distance:
+
+vec4<-c(as.vector(mean_participant_V[1,1:300]))
+vec4<- as.numeric(unlist(vec4))
+
+vec5<-c(as.vector(mean_persona_V[5,1:300]))
+vec5<- as.numeric(unlist(vec5))
+
+cos_similarity_Persona5<-cosine(vec4,vec5)
+
+cos_similarity_Persona5<-as.data.frame(cos_similarity_Persona5)
+
+#for persona 5:
+for (row_nr in 2:nrow(mean_participant_V)){
+  
+  vec1<-c(as.vector(mean_participant_V[row_nr,1:300]))
+  vec1<- as.numeric(unlist(vec1))
+  
+  vec2<-c(as.vector(mean_persona_V[5,1:300]))
+  vec2<- as.numeric(unlist(vec2))
+
+  cos_sim<-cosine(vec1,vec2)
+  
+  cos_similarity_Persona5<-rbind(cos_similarity_Persona5, cos_sim)
+}
+
+cos_similarity_Persona5["ParticipantCode"]<- df_wide$participant.code #binding participant to the df
+```
+
+-
+#Merging all 5 dataframes together
+```{r}
+
+Cosine_similarity_df<-rbind(cos_similarity,cos_similarity_Persona2,cos_similarity_Persona3,cos_similarity_Persona4,cos_similarity_Persona5)
+
+```
+
+
+-
+#Filtering The df_long to only contain non-anonymous condition:
+```{r}
+library(tidyverse)
+library(dplyr)
+
+filteredForNA<-filter(df_long, Is_anonymous == 0)
+filteredForNA$Round<-as.factor(filteredForNA$Round)
+
+x<-rep(c(4,5,6,7,8),each= 26)
+
+Cosine_similarity_df <- Cosine_similarity_df %>% 
+  mutate(Other = x)
+
+new_dataset <- filteredForNA %>% right_join(Cosine_similarity_df, by=c("ParticipantCode","Other"))   %>% rename(
+    Semantic_distance = V1
+    )
+
+  
+#write.csv(new_dataset,"/Users/annahedvigmoller/Elgiganten Cloud/Uni/4. Semester/Social cultural #dynamics/sockult_exam_new/Aanlysis/Cosine-similaritydf.csv", row.names = TRUE)
+
+```
+
